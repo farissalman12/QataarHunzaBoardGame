@@ -1,16 +1,78 @@
-# React + Vite
+# Qataar: Traditional Hunza Board Game ⏳
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![Qataar Game Banner](https://img.shields.io/badge/Status-Live-success?style=for-the-badge) 
+[![Play Now](https://img.shields.io/badge/Play-Qataar-black?style=for-the-badge&logo=vercel)](https://farissalman12.github.io/QataarHunzaBoardGame/)
 
-Currently, two official plugins are available:
+**Qataar** (also known as Hourglass Checkers) is a traditional strategy board game from the Hunza Valley. This modern web adaptation brings the classic experience to your browser with smooth animations, mobile responsiveness, and a challenging AI opponent.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+👉 **[Play the Live Demo](https://farissalman12.github.io/QataarHunzaBoardGame/)**
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🎮 Game Features
 
-## Expanding the ESLint configuration
+-   **🤖 Smart AI Opponent**: Challenge the computer in "1 Player" mode. The AI intelligently handles captures, promotions, and chain jumps.
+-   **📱 Fully Responsive**: Optimized for all devices—play seamlessly on Desktop, Tablet, or Mobile.
+-   **⚔️ Multiplayer Support**: Toggle between "1 Player" (PvC) and "2 Players" (PvP) to play with a friend on the same device.
+-   **🎨 Dynamic Themes**: Switch between Light and Dark modes.
+-   **🔄 Chain Jumps**: Authentic implementation of forced double/triple jumps.
+-   **👑 King Promotion**: Reach the opposite end to promote your piece and move in any direction.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## 📜 How to Play
+
+### The Board
+-   The board consists of two triangles connected at a center point (Hourglass shape).
+-   **Player 1 (Black)** starts at the **Bottom**.
+-   **Player 2 / CPU (White)** starts at the **Top**.
+
+### Movement
+-   **Basic Move**: You can move one step to any connected empty spot.
+-   **Direction**:
+    -   Regular pieces can only move **Forward** (P1 moves UP, P2 moves DOWN).
+    -   Lateral (side-to-side) moves are allowed if connected.
+-   **Capturing**: Jump over an opponent's piece into an empty spot behind it to capture it.
+    -   Captures can be in **any direction** (Forward or Backward) given a valid straight line.
+    -   **Chain Jumps**: If you capture a piece and land in a spot where another capture is possible, you **must** continue jumping.
+
+### Winning
+-   Eliminate all opponent pieces or block them so they have no valid moves.
+
+---
+
+## 🛠️ Technologies Used
+
+-   **React 19**: Core UI framework.
+-   **Vite**: Fast build tool and dev server.
+-   **Tailwind CSS v4**: Utility-first styling for responsiveness and themes.
+-   **Framer Motion**: Smooth animations for piece movement and captures.
+-   **Lucide React**: Beautiful, consistent icons.
+
+---
+
+## 🚀 Running Locally
+
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/farissalman12/QataarHunzaBoardGame.git
+    cd QataarHunzaBoardGame
+    ```
+
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    ```
+
+3.  **Start the development server**:
+    ```bash
+    npm run dev
+    ```
+
+4.  **Open your browser** at `http://localhost:5173/QataarHunzaBoardGame/`.
+
+---
+
+## 👨‍💻 Credits
+
+Developed by **Faris Salman**.
