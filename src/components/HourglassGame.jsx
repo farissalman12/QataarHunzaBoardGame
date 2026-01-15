@@ -455,6 +455,24 @@ export default function HourglassGame() {
 
 
 
+  // --- Win Condition Failsafe (Reactive) ---
+  useEffect(() => {
+      if (winner) return;
+      
+      const p1Count = pieces.filter(p => p.player === 1).length;
+      const p2Count = pieces.filter(p => p.player === 2).length;
+      
+      if (pieces.length > 0) { // Ensure game has started
+          if (p1Count === 0) {
+              setWinner(2);
+              sounds.playWin();
+          } else if (p2Count === 0) {
+              setWinner(1);
+              sounds.playWin();
+          }
+      }
+  }, [pieces, winner, sounds]);
+
   // --- Computer Player Logic (AI) ---
   useEffect(() => {
     if (gameMode === 'pvc' && turn === 2 && !winner) {
@@ -655,13 +673,7 @@ export default function HourglassGame() {
                  setIsChainJumping(false);
                  setTurn(turn === 1 ? 2 : 1);
                  
-                 // Win Check
-                 if (!newPieces.some(p => p.player === (turn === 1 ? 2 : 1))) {
-                    setWinner(turn);
-                    sounds.playWin();
-                 } else {
-                    sounds.playCapture();
-                 }
+                 sounds.playCapture();
              }
           }
       } else {
