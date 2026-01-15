@@ -938,7 +938,7 @@ export default function HourglassGame() {
   };
 
   // Theme Configs
-  const colors = {
+  const colorSchemes = {
       light: {
           bg: 'bg-neutral-50',
           text: 'text-neutral-900',
@@ -959,7 +959,9 @@ export default function HourglassGame() {
           node: { valid: 'bg-zinc-100', default: 'bg-zinc-800' },
           indicator: { ring: 'border-zinc-100', glow: 'bg-white/5 hover:bg-white/10' }
       }
-  }[theme];
+  };
+
+  const colors = colorSchemes[theme];
 
   return (
     <div className={`w-full h-screen flex flex-col justify-between overflow-hidden ${colors.bg} ${colors.text} font-sans transition-colors duration-500`}>
