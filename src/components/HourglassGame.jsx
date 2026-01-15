@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Trophy, Info, Crown, Sun, Moon, User, Users, RotateCcw, PenTool, Save, Trash2, X } from 'lucide-react';
+import { RefreshCw, Trophy, Info, Crown, Sun, Moon, User, Users, RotateCcw, PenTool, Save, Trash2, X, Volume2, VolumeX } from 'lucide-react';
 
 // --- Graph Topology & Logic ---
 
@@ -151,66 +151,66 @@ const getInitialPieces = (layout) => {
   // --- Sound Effects System (Hook) ---
   const useSound = () => {
       const ctxRef = React.useRef(null);
+      const [isMuted, setIsMuted] = useState(false);
+      const isMutedRef = useRef(false);
+
+      const toggleMute = () => {
+        setIsMuted(prev => {
+            const next = !prev;
+            isMutedRef.current = next;
+            return next;
+        });
+      };
 
       // Initialize Audio Context lazily
       const getCtx = () => {
+          if (isMutedRef.current) return null;
+          
           if (!ctxRef.current) {
                const AudioContext = window.AudioContext || window.webkitAudioContext;
                if (AudioContext) ctxRef.current = new AudioContext();
           }
+          if (ctxRef.current?.state === 'suspended') {
+              ctxRef.current.resume();
+          }
           return ctxRef.current;
       };
 
+
+      // --- Sound Generators (Premium Glass/Stone Aesthetic) ---
+      
       const playTone = (freq, type, duration, vol = 0.1) => {
           const ctx = getCtx();
           if (!ctx) return;
+          const t = ctx.currentTime;
           
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           
           osc.type = type;
-          osc.frequency.setValueAtTime(freq, ctx.currentTime);
+          osc.frequency.setValueAtTime(freq, t);
           
-          gain.gain.setValueAtTime(vol, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+          // Soft Attack/Release Envelope
+          gain.gain.setValueAtTime(0, t);
+          gain.gain.linearRampToValueAtTime(vol, t + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
           
           osc.connect(gain);
           gain.connect(ctx.destination);
           
           osc.start();
-          osc.stop(ctx.currentTime + duration);
+          osc.stop(t + duration);
       };
 
-      const playThud = () => {
+      const playGlide = () => {
           const ctx = getCtx();
           if (!ctx) return;
+          const t = ctx.currentTime;
           
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          
-          // Pitch drop for "Thud" weight
-          osc.frequency.setValueAtTime(120, ctx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.15);
-          osc.type = 'triangle';
-
-          gain.gain.setValueAtTime(0.15, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.15);
-      };
-
-      const playPaperSlide = () => {
-          const ctx = getCtx();
-          if (!ctx) return;
-          
-          const bufferSize = ctx.sampleRate * 0.3; // 0.3s duration
+          const bufferSize = ctx.sampleRate * 0.15; // Short swoosh
           const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
           const data = buffer.getChannelData(0);
           
-          // Generate White Noise
           for (let i = 0; i < bufferSize; i++) {
               data[i] = Math.random() * 2 - 1;
           }
@@ -218,16 +218,18 @@ const getInitialPieces = (layout) => {
           const noise = ctx.createBufferSource();
           noise.buffer = buffer;
 
-          // Filter to make it "Paper" (Low Pass)
           const filter = ctx.createBiquadFilter();
-          filter.type = 'lowpass';
-          filter.frequency.value = 600; // Soft friction sound
+          filter.type = 'bandpass';
+          filter.Q.value = 1;
+
+          // Frequency Sweep for "Whoosh"
+          filter.frequency.setValueAtTime(200, t);
+          filter.frequency.linearRampToValueAtTime(600, t + 0.1);
 
           const gain = ctx.createGain();
-          // Envelope: Soft attack, sustain, soft release
-          gain.gain.setValueAtTime(0, ctx.currentTime);
-          gain.gain.linearRampToValueAtTime(0.08, ctx.currentTime + 0.05); // Attack
-          gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3); // Release
+          gain.gain.setValueAtTime(0, t);
+          gain.gain.linearRampToValueAtTime(0.03, t + 0.05); // Very subtle
+          gain.gain.linearRampToValueAtTime(0, t + 0.15);
 
           noise.connect(filter);
           filter.connect(gain);
@@ -235,21 +237,50 @@ const getInitialPieces = (layout) => {
           noise.start();
       };
 
+      const playClink = () => {
+          const ctx = getCtx();
+          if (!ctx) return;
+          const t = ctx.currentTime;
+          
+          // Dual Oscillator for "Crystal" resonance
+          const createBell = (freq, detune) => {
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(freq, t);
+              osc.detune.setValueAtTime(detune, t);
+              
+              gain.gain.setValueAtTime(0, t);
+              gain.gain.linearRampToValueAtTime(0.1, t + 0.02);
+              gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5); // Long tail
+              
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.start();
+              osc.stop(t + 0.5);
+          };
+
+          createBell(800, 0);
+          createBell(1200, 5); // Harmonic overtone
+      };
+      
+      const playChord = () => {
+         // C Major 7 Add 9 (Ethereal)
+         [523.25, 659.25, 783.99, 987.77, 1174.66].forEach((f, i) => {
+             setTimeout(() => playTone(f, 'sine', 0.8, 0.05), i * 80);
+         });
+      };
+
       return useMemo(() => ({
-          playSelect: () => playThud(), // Thud for selection/placing
-          playMove: () => playPaperSlide(), // Slide sound for movement
-          
-          playCapture: () => { 
-              playThud();
-              setTimeout(() => playTone(300, 'sine', 0.2, 0.1), 100);
-          }, 
-          
-          playClick: () => playTone(800, 'sine', 0.03, 0.01), // Very quiet click
-          playWin: () => { 
-              [440, 554, 659, 880].forEach((f, i) => setTimeout(() => playTone(f, 'sine', 0.8, 0.05), i * 150));
-          },
-          playError: () => playTone(100, 'sawtooth', 0.15, 0.03)
-      }), []);
+          isMuted,
+          toggleMute,
+          playSelect: () => {}, // No sound for selection
+          playMove: () => playGlide(),
+          playCapture: () => playGlide(), // Keeping whoosh as requested
+          playClick: () => {}, // No sound for UI clicks
+          playWin: () => playChord(),
+          playError: () => playTone(150, 'triangle', 0.2, 0.05)
+      }), [isMuted]);
   };
 
 export default function HourglassGame() {
@@ -337,11 +368,11 @@ export default function HourglassGame() {
           }
       }
 
-      if (player === 1) return [1, 2, 3]; // Top row is consistent for both (1,2,3)
+      if (player === 1) return ['1', '2', '3']; // Top row is consistent for both (1,2,3)
        
       if (player === 2) {
-          if (boardLayout === 'square') return [6, 7, 8]; // Bottom Outer Row
-          return [16, 17, 18]; // Hourglass Bottom Row
+          if (boardLayout === 'square') return ['6', '7', '8']; // Bottom Outer Row
+          return ['16', '17', '18']; // Hourglass Bottom Row
       }
       return [];
   };
@@ -575,7 +606,7 @@ export default function HourglassGame() {
       let shouldPromote = false;
       if (!movedPiece.isKing) {
           const promotionNodes = getPromotionNodes(movedPiece.player);
-          if (promotionNodes.includes(move.target)) shouldPromote = true;
+          if (promotionNodes.includes(String(move.target))) shouldPromote = true;
       }
 
       // Calculate new state
@@ -698,7 +729,11 @@ export default function HourglassGame() {
   const [editorLines, setEditorLines] = useState([]); // Array of [id1, id2] pairs
   const [dragState, setDragState] = useState(null); // { startId: string, current: {x,y} }
   const [editTool, setEditTool] = useState('line'); // 'line', 'p1', 'p2', 'erase'
+  const [editorCursor, setEditorCursor] = useState({ x: 0, y: 0 }); // Snapped Cursor
   const editorRef = React.useRef(null);
+
+  const SNAP = 40;
+  const snap = (v) => Math.round(v / SNAP) * SNAP;
 
   const initializeEditor = () => {
       // Start with current board or empty 7x7?
@@ -718,42 +753,63 @@ export default function HourglassGame() {
   };
 
   // Drag Handlers
-  const handleMouseDown = (e, x, y) => {
+  const handleMouseDown = (e) => {
       e.stopPropagation();
+      if (!editorRef.current) return;
+      const rect = editorRef.current.getBoundingClientRect();
+      const rawX = e.clientX - rect.left;
+      const rawY = e.clientY - rect.top;
+      const x = snap(rawX);
+      const y = snap(rawY);
+
       if (editTool === 'line') {
-          setDragState({ startId: `${x},${y}`, startX: x, startY: y, current: { x: 0, y: 0 } });
+          setDragState({ startId: `${x},${y}`, startX: x, startY: y, current: { x: rawX, y: rawY } });
+      } else {
+          // Instant Place for tools
+          toggleEditorNode(x, y);
       }
   };
 
   const handleMouseMove = (e) => {
-      if (!dragState) return;
       if (!editorRef.current) return;
-      if (editTool !== 'line') return;
       
       const rect = editorRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const rawX = e.clientX - rect.left;
+      const rawY = e.clientY - rect.top;
       
-      setDragState(prev => ({ ...prev, current: { x: (x / rect.width) * 100, y: (y / rect.height) * 100 } }));
-  };
+      // Update Cursor Ghost
+      const snapX = snap(rawX);
+      const snapY = snap(rawY);
+      setEditorCursor({ x: snapX, y: snapY });
 
-  const handleMouseUp = (e, x, y) => {
-      e.stopPropagation();
-      
-      // Handle Click Interactions (Place/Erase)
-      // If we are NOT dragging (or very short drag), it's a click
-      if (!dragState && editTool !== 'line') {
-          toggleEditorNode(x, y);
-          return;
+      // Update Drag Line
+      if (dragState) {
+          setDragState(prev => ({ 
+              ...prev, 
+              current: { x: rawX, y: rawY } // Keep smooth for line drawing visual
+          }));
       }
+  };
+  
+  const handleMouseUp = (e) => {
+      e.stopPropagation();
+      if (!editorRef.current) return;
       
+      const rect = editorRef.current.getBoundingClientRect();
+      const x = snap(e.clientX - rect.left);
+      const y = snap(e.clientY - rect.top);
+
       // Handle Line Drag Finish
       if (dragState) {
           const startId = dragState.startId;
           const endId = `${x},${y}`;
           
+          // If we just clicked (start == end), treat it as a node toggle if we were in line mode? 
+          // Actually, if in line mode, click might mean "Start Line", drag "Draw".
+          // But here we use DragState to track line creation.
+          
           if (startId !== endId) {
-              // Validate: Horizontal, Vertical, or Diagonal (dx=dy)
+             // Validate and Add Line (logic matches existing)
               const dx = Math.abs(x - dragState.startX);
               const dy = Math.abs(y - dragState.startY);
               
@@ -881,8 +937,128 @@ export default function HourglassGame() {
 
   // Render Editor Grid
   const renderEditor = () => {
-      // Stubbed for debugging
-      return null;
+      if (!isEditing) return null;
+
+      return (
+          <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className={`fixed inset-0 z-[100] flex flex-col items-center justify-center backdrop-blur-xl ${theme === 'light' ? 'bg-white/90' : 'bg-black/90'}`}
+          >
+              <div className="absolute top-4 right-4 z-[110]">
+                  <button onClick={() => setIsEditing(false)} className={`p-3 rounded-full ${theme === 'light' ? 'bg-neutral-100 hover:bg-neutral-200' : 'bg-neutral-800 hover:bg-neutral-700'}`}>
+                      <X size={24} className={colors.text} />
+                  </button>
+              </div>
+
+              <div className="mb-6 text-center">
+                  <h2 className={`text-3xl font-bold uppercase tracking-widest ${colors.text}`}>Board Editor</h2>
+                  <p className={`text-xs uppercase tracking-wider opacity-60 mt-2 ${colors.subtext}`}>Drag to draw lines • Click to place pieces</p>
+              </div>
+
+              {/* Editor Canvas */}
+              <div 
+                  ref={editorRef}
+                  className={`relative shadow-2xl rounded-xl border overflow-hidden cursor-none ${theme === 'light' ? 'bg-white border-neutral-200' : 'bg-neutral-900 border-neutral-800'}`}
+                  style={{ width: 600, height: 600 }}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+              >
+                  {/* Grid Background */}
+                  <div className={`absolute inset-0 opacity-10 ${theme === 'light' ? 'bg-[radial-gradient(#000_1px,transparent_1px)]' : 'bg-[radial-gradient(#fff_1px,transparent_1px)]'} [background-size:40px_40px]`} />
+
+                  <svg className="absolute inset-0 pointer-events-none" width="100%" height="100%">
+                      {/* Existing Lines */}
+                      {editorLines.map((line, i) => {
+                          const [startId, endId] = line;
+                          const n1 = editorNodes[startId];
+                          const n2 = editorNodes[endId];
+                          if (!n1 || !n2) return null;
+                          return (
+                              <line 
+                                  key={i} 
+                                  x1={n1.x} y1={n1.y} 
+                                  x2={n2.x} y2={n2.y} 
+                                  stroke={theme === 'light' ? '#262626' : '#e5e5e5'} 
+                                  strokeWidth="6" 
+                                  strokeLinecap="round" 
+                              />
+                          );
+                      })}
+                      {/* Dragging Line */}
+                      {dragState && (
+                          <line 
+                              x1={dragState.startX} 
+                              y1={dragState.startY} 
+                              x2={dragState.current.x}
+                              y2={dragState.current.y}
+                              stroke={theme === 'light' ? '#3b82f6' : '#60a5fa'} 
+                              strokeWidth="4" 
+                              strokeDasharray="10,5" 
+                              strokeLinecap="round" 
+                          />
+                      )}
+                  </svg>
+                  
+                  {/* Ghost Cursor (Movable Point Placer) */}
+                  {!dragState && (
+                      <div 
+                          className="absolute pointer-events-none w-6 h-6 -ml-3 -mt-3 rounded-full border-2 border-yellow-400 bg-yellow-400/20 z-50 transition-all duration-75"
+                          style={{ left: editorCursor.x, top: editorCursor.y }}
+                      />
+                  )}
+
+                  {/* Nodes */}
+                  {Object.entries(editorNodes).map(([id, n]) => (
+                      <div 
+                          key={id} 
+                          className={`absolute w-4 h-4 -ml-2 -mt-2 rounded-full border-2 transition-transform hover:scale-150 z-20 
+                          ${n.type === 'empty' ? (theme === 'light' ? 'bg-neutral-900 border-white' : 'bg-white border-neutral-900') : ''}
+                          ${n.type === 'p1' ? 'bg-blue-500 border-white' : ''}
+                          ${n.type === 'p2' ? 'bg-red-500 border-white' : ''}`}
+                          style={{ left: n.x, top: n.y }}
+                      >
+                           {n.type === 'p1' && <div className="absolute inset-0 flex items-center justify-center text-[8px] text-white font-bold">1</div>}
+                           {n.type === 'p2' && <div className="absolute inset-0 flex items-center justify-center text-[8px] text-white font-bold">2</div>}
+                      </div>
+                  ))}
+              </div>
+
+              {/* Toolbar */}
+              <div className={`mt-8 flex gap-4 p-2 rounded-2xl border shadow-xl ${theme === 'light' ? 'bg-white border-neutral-200' : 'bg-zinc-900 border-zinc-800'}`}>
+                  {[
+                      { id: 'line', icon: PenTool, label: 'Draw' },
+                      { id: 'p1', icon: User, label: 'P1' },
+                      { id: 'p2', icon: User, label: 'P2', color: 'text-red-500' }, // Distinguish P2
+                      { id: 'erase', icon: Trash2, label: 'Erase' },
+                  ].map(tool => (
+                      <button
+                          key={tool.id}
+                          onClick={() => { setEditTool(tool.id); sounds.playClick(); }}
+                          className={`p-4 rounded-xl flex flex-col items-center gap-1 min-w-[80px] transition-all
+                          ${editTool === tool.id 
+                              ? (theme === 'light' ? 'bg-neutral-900 text-white' : 'bg-white text-black') 
+                              : 'hover:bg-neutral-100 dark:hover:bg-neutral-800'}`}
+                      >
+                          <tool.icon size={20} className={tool.color || ''} />
+                          <span className="text-[10px] uppercase font-bold tracking-wider">{tool.label}</span>
+                      </button>
+                  ))}
+                  
+                  <div className={`w-[1px] ${theme === 'light' ? 'bg-neutral-200' : 'bg-neutral-800'}`} />
+
+                  <button
+                      onClick={saveCustomBoard}
+                      className={`p-4 rounded-xl flex flex-col items-center gap-1 min-w-[80px] bg-green-500 text-white hover:bg-green-600 transition-all`}
+                  >
+                      <Save size={20} />
+                      <span className="text-[10px] uppercase font-bold tracking-wider">Save</span>
+                  </button>
+              </div>
+          </motion.div>
+      );
   };
 
 
@@ -953,9 +1129,9 @@ export default function HourglassGame() {
           bg: 'bg-zinc-950',
           text: 'text-zinc-100',
           subtext: 'text-zinc-500',
-          p1: { bg: 'bg-zinc-100', text: 'text-zinc-900', border: 'border-zinc-100' },
-          p2: { bg: 'bg-zinc-900', text: 'text-zinc-100', border: 'border-zinc-700' },
-          lines: { outer: '#27272a', inner: '#71717a' },
+          p1: { bg: 'bg-gradient-to-br from-zinc-100 to-zinc-300 shadow-[0_0_12px_rgba(255,255,255,0.2)]', text: 'text-zinc-900', border: 'border-zinc-200' },
+          p2: { bg: 'bg-gradient-to-br from-zinc-800 to-black shadow-lg', text: 'text-zinc-100', border: 'border-zinc-600' },
+          lines: { outer: '#52525b', inner: '#d4d4d8' }, // Much brighter lines
           node: { valid: 'bg-zinc-100', default: 'bg-zinc-800' },
           indicator: { ring: 'border-zinc-100', glow: 'bg-white/5 hover:bg-white/10' }
       }
@@ -1030,6 +1206,14 @@ export default function HourglassGame() {
             >
                 <RotateCcw size={16} />
                 <span className="hidden md:inline">Reset</span>
+            </button>
+
+            <button 
+                onClick={() => { sounds.toggleMute(); sounds.playClick(); }}
+                className={`p-2 rounded-full border transition-all shadow-sm ml-2 ${theme === 'light' ? 'bg-white border-neutral-200 hover:bg-neutral-50' : 'bg-neutral-900 border-neutral-800 hover:bg-neutral-800'}`}
+                title={sounds.isMuted ? "Unmute" : "Mute"}
+            >
+                {sounds.isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
             </button>
 
             {/* Theme Toggle */}
