@@ -148,31 +148,8 @@ const getInitialPieces = (layout) => {
     ];
 };
 
-export default function HourglassGame() {
-  console.log("HourglassGame Mounting...");
-  const [boardLayout, setBoardLayout] = useState('standard'); // 'standard', 'extended', 'square', 'custom'
-  
-  // Custom Board State
-  const [isEditing, setIsEditing] = useState(false);
-  const [customConfig, setCustomConfig] = useState(() => {
-      try {
-          const saved = localStorage.getItem('qataar_custom_board');
-          const parsed = saved ? JSON.parse(saved) : null;
-          if (parsed && typeof parsed === 'object') {
-              return {
-                  nodes: parsed.nodes || {},
-                  lines: parsed.lines || [],
-                  pieces: parsed.pieces || [],
-                  segments: parsed.segments || [] // Store raw segments for editor
-              };
-          }
-      } catch (e) {
-          console.error("Failed to parse custom config:", e);
-      }
-      return { nodes: {}, lines: [], pieces: [] };
-  });
-
-  // --- Sound Effects System ---
+  // --- Sound Effects System (Hook) ---
+  const useSound = () => {
       const ctxRef = React.useRef(null);
 
       // Initialize Audio Context lazily
@@ -274,6 +251,32 @@ export default function HourglassGame() {
           playError: () => playTone(100, 'sawtooth', 0.15, 0.03)
       }), []);
   };
+
+export default function HourglassGame() {
+  console.log("HourglassGame Mounting...");
+  const [boardLayout, setBoardLayout] = useState('standard'); // 'standard', 'extended', 'square', 'custom'
+  
+  // Custom Board State
+  const [isEditing, setIsEditing] = useState(false);
+  const [customConfig, setCustomConfig] = useState(() => {
+      try {
+          const saved = localStorage.getItem('qataar_custom_board');
+          const parsed = saved ? JSON.parse(saved) : null;
+          if (parsed && typeof parsed === 'object') {
+              return {
+                  nodes: parsed.nodes || {},
+                  lines: parsed.lines || [],
+                  pieces: parsed.pieces || [],
+                  segments: parsed.segments || [] // Store raw segments for editor
+              };
+          }
+      } catch (e) {
+          console.error("Failed to parse custom config:", e);
+      }
+      return { nodes: {}, lines: [], pieces: [] };
+  });
+
+
 
   const sounds = useSound();
 
@@ -878,207 +881,8 @@ export default function HourglassGame() {
 
   // Render Editor Grid
   const renderEditor = () => {
-      if (!isEditing) return null;
-      
-      const gridPoints = [];
-      for (let y = -3; y <= 3; y++) {
-          for (let x = -3; x <= 3; x++) {
-              gridPoints.push({ x, y });
-          }
-      }
-
-      return (
-          <div className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-              <div className={`relative w-full max-w-2xl aspect-[3/4] md:aspect-[4/3] rounded-3xl shadow-2xl flex flex-col md:flex-row overflow-hidden border ${theme === 'light' ? 'bg-white border-neutral-200' : 'bg-neutral-900 border-neutral-800'}`}>
-                  
-                  {/* Sidebar / Topbar */}
-                  <div className={`p-6 md:p-8 flex flex-col justify-between shrink-0 md:w-64 border-b md:border-b-0 md:border-r ${theme === 'light' ? 'border-neutral-100 bg-neutral-50/50' : 'border-neutral-800 bg-neutral-900/50'}`}>
-                      <div>
-                          <h2 className="text-2xl font-bold mb-2 uppercase tracking-tight">Board Editor</h2>
-                          <div className="flex flex-col gap-2 mt-6">
-                              <button
-                                  onClick={() => { setEditTool('line'); sounds.playClick(); }}
-                                  className={`w-full p-3 rounded-lg flex items-center gap-3 text-xs font-bold uppercase tracking-wider transition-all
-                                  ${editTool === 'line' 
-                                      ? (theme === 'light' ? 'bg-neutral-900 text-white shadow-md' : 'bg-white text-black shadow-md')
-                                      : 'hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50 opacity-60 hover:opacity-100'}`}
-                              >
-                                  <PenTool size={16} /> Draw Lines
-                              </button>
-                              
-                              <button
-                                  onClick={() => { setEditTool('empty'); sounds.playClick(); }}
-                                  className={`w-full p-3 rounded-lg flex items-center gap-3 text-xs font-bold uppercase tracking-wider transition-all
-                                  ${editTool === 'empty' 
-                                      ? (theme === 'light' ? 'bg-neutral-900 text-white shadow-md' : 'bg-white text-black shadow-md')
-                                      : 'hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50 opacity-60 hover:opacity-100'}`}
-                              >
-                                  <div className={`w-4 h-4 rounded-full border border-dashed ${theme === 'light' ? 'border-neutral-900 bg-neutral-200' : 'border-white bg-neutral-700'}`} />
-                                  Movable Place
-                              </button>
-
-                              <button
-                                  onClick={() => { setEditTool('p1'); sounds.playClick(); }}
-                                  className={`w-full p-3 rounded-lg flex items-center gap-3 text-xs font-bold uppercase tracking-wider transition-all
-                                  ${editTool === 'p1' 
-                                      ? (theme === 'light' ? 'bg-neutral-900 text-white shadow-md' : 'bg-white text-black shadow-md')
-                                      : 'hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50 opacity-60 hover:opacity-100'}`}
-                              >
-                                  <div className={`w-4 h-4 rounded-full border ${theme === 'light' ? 'bg-neutral-900 border-neutral-900' : 'bg-white border-white'}`} 
-                                       style={editTool !== 'p1' ? { backgroundColor: 'transparent' } : {}}
-                                  />
-                                  Player 1
-                              </button>
-
-                              <button
-                                  onClick={() => { setEditTool('p2'); sounds.playClick(); }}
-                                  className={`w-full p-3 rounded-lg flex items-center gap-3 text-xs font-bold uppercase tracking-wider transition-all
-                                  ${editTool === 'p2' 
-                                      ? (theme === 'light' ? 'bg-neutral-900 text-white shadow-md' : 'bg-white text-black shadow-md')
-                                      : 'hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50 opacity-60 hover:opacity-100'}`}
-                              >
-                                  <div className={`w-4 h-4 rounded-full border ${theme === 'light' ? 'bg-white border-neutral-300' : 'bg-neutral-900 border-neutral-700'}`} 
-                                       style={editTool === 'p2' ? (theme==='light' ? {background:'white'} : {background:'#171717'}) : {background:'transparent'} }
-                                  />
-                                  Player 2
-                              </button>
-
-                              <button
-                                  onClick={() => setEditTool('erase')}
-                                  className={`w-full p-3 rounded-lg flex items-center gap-3 text-xs font-bold uppercase tracking-wider transition-all text-red-500
-                                  ${editTool === 'erase' 
-                                      ? 'bg-red-500/10 border border-red-500/20 shadow-sm'
-                                      : 'hover:bg-red-500/5 opacity-60 hover:opacity-100'}`}
-                              >
-                                  <Trash2 size={16} /> Erase
-                              </button>
-                          </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="mt-auto flex flex-col gap-2 pt-6 border-t border-dashed border-neutral-200 dark:border-neutral-800">
-                      <button
-                          onClick={() => { saveCustomBoard(); }}
-                          className={`w-full py-3 rounded-lg font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] transition-all
-                          ${theme === 'light' ? 'bg-neutral-900 text-white' : 'bg-white text-black'}`}
-                      >
-                          <Save size={16} /> Save & Play
-                      </button>
-                      <div className="flex gap-2">
-                           <button
-                              onClick={() => { 
-                                  setEditorNodes({}); 
-                                  setEditorLines([]); 
-                                  sounds.playClick();
-                              }}
-                              className="flex-1 py-3 rounded-lg font-bold uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 border border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
-                          >
-                              <Trash2 size={14} /> Clear
-                          </button>
-                          <button
-                              onClick={() => { setIsEditing(false); sounds.playClick(); }}
-                              className={`flex-1 py-3 rounded-lg font-bold uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 border transition-all
-                              ${theme === 'light' ? 'border-neutral-200 hover:bg-neutral-100' : 'border-neutral-800 hover:bg-neutral-800'}`}
-                          >
-                              <X size={14} /> Cancel
-                          </button>
-                      </div>
-                  </div>
-                  </div>
-
-                  {/* Canvas Area */}
-                  <div className="flex-1 relative bg-center bg-[length:24px_24px] overflow-hidden flex items-center justify-center"
-                       style={{ 
-                           backgroundImage: `radial-gradient(${theme === 'light' ? '#00000010' : '#ffffff10'} 1px, transparent 1px)` 
-                       }}
-                  >
-                        <div 
-                          className="relative w-[85%] max-w-[500px] aspect-square"
-                          ref={editorRef}
-                          onMouseMove={handleMouseMove}
-                        >
-                          {/* SVG Line Layer */}
-                          <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
-                              {/* Saved Segments */}
-                              {editorLines.map(([start, end], i) => {
-                                   const s = parseId(start);
-                                   const e = parseId(end);
-                                   const x1 = ((s.x + 3.5) / 7) * 100 + '%';
-                                   const y1 = ((s.y + 3.5) / 7) * 100 + '%';
-                                   const x2 = ((e.x + 3.5) / 7) * 100 + '%';
-                                   const y2 = ((e.y + 3.5) / 7) * 100 + '%';
-                                   return (
-                                       <line 
-                                         key={i} 
-                                         x1={x1} y1={y1} x2={x2} y2={y2} 
-                                         stroke={theme === 'light' ? '#000' : '#fff'} 
-                                         strokeWidth="3" 
-                                         strokeLinecap="round" 
-                                         opacity="0.8"
-                                       />
-                                   );
-                              })}
-                              
-                              {/* Active Drag Line */}
-                              {dragState && (
-                                  <line 
-                                    x1={((dragState.startX + 3.5) / 7) * 100 + '%'} 
-                                    y1={((dragState.startY + 3.5) / 7) * 100 + '%'} 
-                                    x2={dragState.current.x + '%'} 
-                                    y2={dragState.current.y + '%'} 
-                                    stroke={theme === 'light' ? '#000' : '#fff'} 
-                                    strokeWidth="3" 
-                                    strokeDasharray="4,4"
-                                    strokeLinecap="round" 
-                                    opacity="0.6"
-                                  />
-                              )}
-                          </svg>
-
-                          {/* Nodes Grid */}
-                          {gridPoints.map((pt, i) => {
-                              const id = `${pt.x},${pt.y}`;
-                              const node = editorNodes[id];
-                              const type = node ? node.type : null;
-                              
-                              const left = ((pt.x + 3.5) / 7) * 100;
-                              const top = ((pt.y + 3.5) / 7) * 100;
-
-                              return (
-                                  <div
-                                      key={id}
-                                      className="absolute w-8 h-8 -ml-4 -mt-4 z-10"
-                                      style={{ left: `${left}%`, top: `${top}%` }}
-                                      onMouseDown={(e) => handleMouseDown(e, pt.x, pt.y)}
-                                      onMouseUp={(e) => handleMouseUp(e, pt.x, pt.y)}
-                                  >
-                                      <button
-                                        onClick={() => toggleEditorNode(pt.x, pt.y)}
-                                        className={`w-full h-full rounded-full transition-all duration-200 flex items-center justify-center scale-90 hover:scale-110
-                                        ${!type ? 'bg-transparent border border-transparent' : 'shadow-md'}
-                                        ${type === 'empty' ? (theme === 'light' ? 'bg-neutral-200 border border-neutral-300' : 'bg-neutral-800 border border-neutral-700') : ''}
-                                        ${type === 'p1' ? (theme === 'light' ? 'bg-neutral-900 border-neutral-900' : 'bg-white border-white') : ''}
-                                        ${type === 'p2' ? (theme === 'light' ? 'bg-white border-neutral-300' : 'bg-neutral-900 border-neutral-700') : ''}
-                                        `}
-                                      >
-                                          {!type && (
-                                              <div className={`w-1.5 h-1.5 rounded-full opacity-20 ${theme === 'light' ? 'bg-black' : 'bg-white'}`} />
-                                          )}
-                                          {type === 'p1' && (
-                                               <div className={`w-2 h-2 rounded-full ${theme === 'light' ? 'bg-white/20' : 'bg-black/20'}`} />
-                                          )}
-                                          {type === 'p2' && (
-                                               <div className={`w-2 h-2 rounded-full ${theme === 'light' ? 'bg-black/10' : 'bg-white/20'}`} />
-                                          )}
-                                      </button>
-                                 </div>
-                              );
-                          })}
-                        </div>
-                  </div>
-              </div>
-          </div>
-      );
+      // Stubbed for debugging
+      return null;
   };
 
 
@@ -1562,6 +1366,7 @@ export default function HourglassGame() {
     </div>
   );
 }
+
 
 // Helper: Convert separate segments [[a,b], [b,c]] into chains [[a,b,c]]
 const convertSegmentsToChains = (segments) => {
