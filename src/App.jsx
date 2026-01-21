@@ -1,8 +1,11 @@
 import HourglassGame from './components/HourglassGame'
+import ErrorBoundary from './components/UI/ErrorBoundary'
 
 function App() {
   return (
-    <HourglassGame />
+    <ErrorBoundary>
+      <HourglassGame />
+    </ErrorBoundary>
   )
 }
 
