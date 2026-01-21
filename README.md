@@ -11,12 +11,14 @@
 
 ## 🎮 Game Features
 
--   **🤖 Smart AI Opponent**: Challenge the computer in "1 Player" mode. The AI intelligently handles captures, promotions, and chain jumps.
--   **📱 Fully Responsive**: Optimized for all devices—play seamlessly on Desktop, Tablet, or Mobile.
--   **⚔️ Multiplayer Support**: Toggle between "1 Player" (PvC) and "2 Players" (PvP) to play with a friend on the same device.
+-   **🤖 Smart AI Opponent**: Challenge the computer in "1 Player" mode. Powered by a **Web Worker** for zero-lag calculations even on high difficulty.
+-   **📱 Installable PWA**: Works **100% Offline**. Add to your home screen for a native app experience.
+-   **📳 Haptic Feedback**: Feel the game with vibration cues for moves, captures, and victory.
+-   **♿ Accessible**: Full keyboard navigation and screen-reader support.
+-   **⚔️ Multiplayer Support**: Toggle between "1 Player" (PvC) and "2 Players" (PvP).
 -   **🎨 Dynamic Themes**: Switch between Light and Dark modes.
 -   **🔄 Chain Jumps**: Authentic implementation of forced double/triple jumps.
--   **👑 King Promotion**: Reach the opposite end to promote your piece and move in any direction.
+-   **👑 King Promotion**: Reach the opposite end to promote your piece.
 
 ---
 
@@ -45,9 +47,12 @@
 
 -   **React 19**: Core UI framework.
 -   **Vite**: Fast build tool and dev server.
--   **Tailwind CSS v4**: Utility-first styling for responsiveness and themes.
--   **Framer Motion**: Smooth animations for piece movement and captures.
--   **Lucide React**: Beautiful, consistent icons.
+-   **Tailwind CSS v4**: Utility-first styling.
+-   **Framer Motion**: Smooth animations.
+-   **Web Workers**: Background thread for AI computation.
+-   **PWA**: Service Workers for offline capabilities.
+-   **Vitest**: Automated testing suite.
+-   **Lucide React**: Beautiful icons.
 
 ---
 
